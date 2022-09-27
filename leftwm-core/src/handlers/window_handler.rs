@@ -36,6 +36,8 @@ impl<C: Config, SERVER: DisplayServer> Manager<C, SERVER> {
         self.config.load_window(&mut window);
         insert_window(&mut self.state, &mut window, layout);
 
+        self.single_border_handler(&window);
+
         let follow_mouse = self.state.focus_manager.focus_new_windows
             && self.state.focus_manager.behaviour.is_sloppy()
             && on_same_tag;
@@ -66,18 +68,21 @@ impl<C: Config, SERVER: DisplayServer> Manager<C, SERVER> {
     /// Process a collection of events, and apply them changes to a manager.
     /// Returns true if changes need to be rendered.
     pub fn window_destroyed_handler(&mut self, handle: &WindowHandle) -> bool {
+        let window = match self.state.windows.iter().find(|w| &w.handle == handle) {
+            Some(w) => w.clone(),
+            None => return false,
+        };
+
         // Find the next or previous window on the workspace.
         let new_handle = self.get_next_or_previous(handle);
         // If there is a parent we would want to focus it.
-        let (transient, floating) = match self.state.windows.iter().find(|w| &w.handle == handle) {
-            Some(window) => (window.transient, window.floating()),
-            None => (None, false),
-        };
         self.state
             .focus_manager
             .tags_last_window
             .retain(|_, h| h != handle);
         self.state.windows.retain(|w| &w.handle != handle);
+
+        self.single_border_handler(&window);
 
         //make sure the workspaces do not draw on the docks
         self.update_workspace_avoid_list();
@@ -89,13 +94,13 @@ impl<C: Config, SERVER: DisplayServer> Manager<C, SERVER> {
                 let act = DisplayAction::FocusWindowUnderCursor;
                 self.state.actions.push_back(act);
             } else if let Some(parent) =
-                find_transient_parent(&self.state.windows, transient).map(|p| p.handle)
+                find_transient_parent(&self.state.windows, window.transient).map(|p| p.handle)
             {
                 self.state.focus_window(&parent);
             } else if let Some(handle) = new_handle {
                 self.state.focus_window(&handle);
             } else {
-                let act = DisplayAction::Unfocus(Some(*handle), floating);
+                let act = DisplayAction::Unfocus(Some(*handle), window.floating());
                 self.state.actions.push_back(act);
                 self.state.focus_manager.window_history.push_front(None);
             }
@@ -187,6 +192,25 @@ impl<C: Config, SERVER: DisplayServer> Manager<C, SERVER> {
             .map(|w| w.handle);
         self.state.windows.append(&mut windows_on_workspace);
         new_handle
+    }
+
+    fn single_border_handler(&mut self, window: &Window) {
+        let mut windows_on_tag: Vec<&mut Window> = self.state.windows
+            .iter_mut()
+            .filter(|w| w.tags.first().unwrap() == window.tags.first().unwrap())
+            .collect();
+        if windows_on_tag.len() == 1 {
+            match windows_on_tag.first_mut() {
+                Some(w) => w.border = 0,
+                None => (),
+            };
+        }
+        if windows_on_tag.len() == 2 {
+            match windows_on_tag.first_mut() {
+                Some(w) => w.border = self.config.border_width(),
+                None => (),
+            };
+        }
     }
 }
 
