@@ -36,8 +36,6 @@ impl<C: Config, SERVER: DisplayServer> Manager<C, SERVER> {
         self.config.load_window(&mut window);
         insert_window(&mut self.state, &mut window, layout);
 
-        self.single_border_handler(&window);
-
         let follow_mouse = self.state.focus_manager.focus_new_windows
             && self.state.focus_manager.behaviour.is_sloppy()
             && on_same_tag;
@@ -82,8 +80,6 @@ impl<C: Config, SERVER: DisplayServer> Manager<C, SERVER> {
             .retain(|_, h| h != handle);
         self.state.windows.retain(|w| &w.handle != handle);
 
-        self.single_border_handler(&window);
-
         //make sure the workspaces do not draw on the docks
         self.update_workspace_avoid_list();
 
@@ -105,6 +101,8 @@ impl<C: Config, SERVER: DisplayServer> Manager<C, SERVER> {
                 self.state.focus_manager.window_history.push_front(None);
             }
         }
+
+        self.single_border_handler();
 
         true
     }
@@ -151,6 +149,9 @@ impl<C: Config, SERVER: DisplayServer> Manager<C, SERVER> {
         if strut_changed {
             self.state.update_static();
         }
+
+        self.single_border_handler();
+
         changed
     }
 
@@ -194,22 +195,27 @@ impl<C: Config, SERVER: DisplayServer> Manager<C, SERVER> {
         new_handle
     }
 
-    fn single_border_handler(&mut self, window: &Window) {
-        let mut windows_on_tag: Vec<&mut Window> = self.state.windows
-            .iter_mut()
-            .filter(|w| w.tags.first().unwrap() == window.tags.first().unwrap())
-            .collect();
-        if windows_on_tag.len() == 1 {
-            match windows_on_tag.first_mut() {
-                Some(w) => w.border = 0,
-                None => (),
-            };
-        }
-        if windows_on_tag.len() == 2 {
-            match windows_on_tag.first_mut() {
-                Some(w) => w.border = self.config.border_width(),
-                None => (),
-            };
+    fn single_border_handler(&mut self) {
+        for tag in self.state.tags.normal() {
+            let mut windows_on_tag: Vec<&mut Window> = self
+                .state
+                .windows
+                .iter_mut()
+                .filter(|w| w.tags.first().unwrap() == &tag.id)
+                .collect();
+
+            if windows_on_tag.len() == 1 {
+                match windows_on_tag.first_mut() {
+                    Some(w) => w.border = 0,
+                    None => (),
+                };
+            }
+            if windows_on_tag.len() == 2 {
+                match windows_on_tag.first_mut() {
+                    Some(w) => w.border = self.config.border_width(),
+                    None => (),
+                };
+            }
         }
     }
 }
