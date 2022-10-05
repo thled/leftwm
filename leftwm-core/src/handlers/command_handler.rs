@@ -264,6 +264,7 @@ fn move_to_tag<C: Config, SERVER: DisplayServer>(
     manager.state.actions.push_back(act);
 
     manager.state.sort_windows();
+    manager.state.single_border_handler(manager.config.border_width());
     if handle_focus {
         if let Some(new_handle) = new_handle {
             manager.state.focus_window(&new_handle);

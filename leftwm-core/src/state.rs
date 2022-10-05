@@ -2,7 +2,7 @@
 
 use crate::config::{Config, InsertBehavior, ScratchPad};
 use crate::layouts::Layout;
-use crate::models::Screen;
+use crate::models::{Screen, WindowType};
 use crate::models::Size;
 use crate::models::Tags;
 use crate::models::Window;
@@ -67,7 +67,6 @@ impl State {
     //sorts the windows and puts them in order of importance
     //keeps the order for each importance level
     pub fn sort_windows(&mut self) {
-        use crate::models::WindowType;
         //first dialogs and modals
         let (level1, other): (Vec<&Window>, Vec<&Window>) = self.windows.iter().partition(|w| {
             w.r#type == WindowType::Dialog
@@ -246,5 +245,28 @@ impl State {
             },
         };
         self.focus_tag(&tag_id);
+    }
+
+    pub fn single_border_handler(&mut self, border_width: i32) {
+        for tag in self.tags.normal() {
+            let mut windows_on_tag: Vec<&mut Window> = self
+                .windows
+                .iter_mut()
+                .filter(|w| w.tags.first().unwrap() == &tag.id && w.r#type == WindowType::Normal)
+                .collect();
+
+            if windows_on_tag.len() == 1 {
+                match windows_on_tag.first_mut() {
+                    Some(w) => w.border = 0,
+                    None => (),
+                };
+            }
+            if windows_on_tag.len() == 2 {
+                match windows_on_tag.first_mut() {
+                    Some(w) => w.border = border_width,
+                    None => (),
+                };
+            }
+        }
     }
 }

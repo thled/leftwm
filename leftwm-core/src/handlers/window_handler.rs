@@ -51,6 +51,7 @@ impl<C: Config, SERVER: DisplayServer> Manager<C, SERVER> {
 
         // Tell the WM the new display order of the windows.
         self.state.sort_windows();
+        self.state.single_border_handler(self.config.border_width());
 
         if (self.state.focus_manager.focus_new_windows || is_first) && on_same_tag {
             self.state.focus_window(&window.handle);
@@ -102,7 +103,7 @@ impl<C: Config, SERVER: DisplayServer> Manager<C, SERVER> {
             }
         }
 
-        self.single_border_handler();
+        self.state.single_border_handler(self.config.border_width());
 
         true
     }
@@ -150,8 +151,6 @@ impl<C: Config, SERVER: DisplayServer> Manager<C, SERVER> {
             self.state.update_static();
         }
 
-        self.single_border_handler();
-
         changed
     }
 
@@ -193,30 +192,6 @@ impl<C: Config, SERVER: DisplayServer> Manager<C, SERVER> {
             .map(|w| w.handle);
         self.state.windows.append(&mut windows_on_workspace);
         new_handle
-    }
-
-    fn single_border_handler(&mut self) {
-        for tag in self.state.tags.normal() {
-            let mut windows_on_tag: Vec<&mut Window> = self
-                .state
-                .windows
-                .iter_mut()
-                .filter(|w| w.tags.first().unwrap() == &tag.id)
-                .collect();
-
-            if windows_on_tag.len() == 1 {
-                match windows_on_tag.first_mut() {
-                    Some(w) => w.border = 0,
-                    None => (),
-                };
-            }
-            if windows_on_tag.len() == 2 {
-                match windows_on_tag.first_mut() {
-                    Some(w) => w.border = self.config.border_width(),
-                    None => (),
-                };
-            }
-        }
     }
 }
 
