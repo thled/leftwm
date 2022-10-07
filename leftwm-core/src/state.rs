@@ -32,6 +32,7 @@ pub struct State {
     pub default_height: i32,
     pub disable_tile_drag: bool,
     pub insert_behavior: InsertBehavior,
+    pub no_single_border: bool,
 }
 
 impl State {
@@ -61,6 +62,7 @@ impl State {
             default_height: config.default_height(),
             disable_tile_drag: config.disable_tile_drag(),
             insert_behavior: config.insert_behavior(),
+            no_single_border: config.no_single_border(),
         }
     }
 
@@ -248,6 +250,10 @@ impl State {
     }
 
     pub fn single_border_handler(&mut self, border_width: i32) {
+        if !self.no_single_border {
+            return;
+        }
+
         for tag in self.tags.normal() {
             let mut windows_on_tag: Vec<&mut Window> = self
                 .windows

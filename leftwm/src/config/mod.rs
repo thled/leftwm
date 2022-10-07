@@ -98,6 +98,7 @@ pub struct Config {
     pub disable_tile_drag: bool,
     pub focus_behaviour: FocusBehaviour,
     pub focus_new_windows: bool,
+    pub no_single_border: bool,
     pub keybind: Vec<Keybind>,
     pub state: Option<PathBuf>,
 
@@ -315,6 +316,10 @@ impl leftwm_core::Config for Config {
 
     fn focus_new_windows(&self) -> bool {
         self.focus_new_windows
+    }
+
+    fn no_single_border(&self) -> bool {
+        self.no_single_border
     }
 
     fn command_handler<SERVER: DisplayServer>(

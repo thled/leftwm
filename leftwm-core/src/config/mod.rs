@@ -35,6 +35,8 @@ pub trait Config {
 
     fn focus_new_windows(&self) -> bool;
 
+    fn no_single_border(&self) -> bool;
+
     fn command_handler<SERVER>(command: &str, manager: &mut Manager<Self, SERVER>) -> bool
     where
         SERVER: DisplayServer,
@@ -124,6 +126,11 @@ impl Config for TestConfig {
     fn focus_new_windows(&self) -> bool {
         false
     }
+
+    fn no_single_border(&self) -> bool {
+        false
+    }
+
     fn command_handler<SERVER>(command: &str, manager: &mut Manager<Self, SERVER>) -> bool
     where
         SERVER: DisplayServer,
