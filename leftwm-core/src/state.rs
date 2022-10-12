@@ -2,13 +2,13 @@
 
 use crate::config::{Config, InsertBehavior, ScratchPad};
 use crate::layouts::Layout;
-use crate::models::{Screen, WindowType};
 use crate::models::Size;
 use crate::models::Tags;
 use crate::models::Window;
 use crate::models::Workspace;
 use crate::models::{FocusManager, LayoutManager};
 use crate::models::{Mode, WindowHandle};
+use crate::models::{Screen, WindowType};
 use crate::DisplayAction;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, VecDeque};
@@ -268,10 +268,9 @@ impl State {
                 };
             }
             if windows_on_tag.len() == 2 {
-                match windows_on_tag.first_mut() {
-                    Some(w) => w.border = border_width,
-                    None => (),
-                };
+                windows_on_tag
+                    .iter_mut()
+                    .for_each(|w| w.border = border_width);
             }
         }
     }
